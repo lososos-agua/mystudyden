@@ -18,26 +18,26 @@
 		BF0000000000000000000009 /* ReviewQueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000009 /* ReviewQueueView.swift */; };
 		BF0000000000000000000010 /* TaskKind+Symbol.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000010 /* TaskKind+Symbol.swift */; };
 		BF0000000000000000000011 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000011 /* Assets.xcassets */; };
-		BF0000000000000000000012 /* MyStudyDenCore in Frameworks */ = {isa = PBXBuildFile; productRef = PKPROD000000000000000001 /* MyStudyDenCore */; };
+		BF0000000000000000000012 /* MyStudyDenCore in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000017 /* MyStudyDenCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		F00000000000000000000001 /* MyStudyDenApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyStudyDenApp.swift; sourceTree = "<group>"; };
-		F00000000000000000000002 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModels/AppStore.swift; sourceTree = "<group>"; };
-		F00000000000000000000003 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/RootView.swift; sourceTree = "<group>"; };
-		F00000000000000000000004 /* SemesterDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/SemesterDashboardView.swift; sourceTree = "<group>"; };
-		F00000000000000000000005 /* CourseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/CourseListView.swift; sourceTree = "<group>"; };
-		F00000000000000000000006 /* CourseSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/CourseSidebarView.swift; sourceTree = "<group>"; };
-		F00000000000000000000007 /* CourseDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/CourseDashboardView.swift; sourceTree = "<group>"; };
-		F00000000000000000000008 /* PacketDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/PacketDetailView.swift; sourceTree = "<group>"; };
-		F00000000000000000000009 /* ReviewQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/ReviewQueueView.swift; sourceTree = "<group>"; };
-		F00000000000000000000010 /* TaskKind+Symbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/TaskKind+Symbol.swift; sourceTree = "<group>"; };
+		F00000000000000000000002 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ViewModels/AppStore.swift"; sourceTree = "<group>"; };
+		F00000000000000000000003 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/RootView.swift"; sourceTree = "<group>"; };
+		F00000000000000000000004 /* SemesterDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/SemesterDashboardView.swift"; sourceTree = "<group>"; };
+		F00000000000000000000005 /* CourseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/CourseListView.swift"; sourceTree = "<group>"; };
+		F00000000000000000000006 /* CourseSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/CourseSidebarView.swift"; sourceTree = "<group>"; };
+		F00000000000000000000007 /* CourseDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/CourseDashboardView.swift"; sourceTree = "<group>"; };
+		F00000000000000000000008 /* PacketDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/PacketDetailView.swift"; sourceTree = "<group>"; };
+		F00000000000000000000009 /* ReviewQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/ReviewQueueView.swift"; sourceTree = "<group>"; };
+		F00000000000000000000010 /* TaskKind+Symbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/TaskKind+Symbol.swift"; sourceTree = "<group>"; };
 		F00000000000000000000011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		PROD000000000000000000001 /* MyStudyDen.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyStudyDen.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000001 /* MyStudyDen.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyStudyDen.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		FW0000000000000000000001 /* Frameworks */ = {
+		A00000000000000000000002 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -48,15 +48,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		GRP0000000000000000000001 = {
+		A00000000000000000000003 = {
 			isa = PBXGroup;
 			children = (
-				GRP0000000000000000000002 /* App */,
-				GRP0000000000000000000003 /* Products */,
+				A00000000000000000000004 /* App */,
+				A00000000000000000000005 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		GRP0000000000000000000002 /* App */ = {
+		A00000000000000000000004 /* App */ = {
 			isa = PBXGroup;
 			children = (
 				F00000000000000000000001 /* MyStudyDenApp.swift */,
@@ -72,13 +72,13 @@
 				F00000000000000000000011 /* Assets.xcassets */,
 			);
 			name = App;
-			path = App/MyStudyDenApp;
+			path = "App/MyStudyDenApp";
 			sourceTree = SOURCE_ROOT;
 		};
-		GRP0000000000000000000003 /* Products */ = {
+		A00000000000000000000005 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				PROD000000000000000000001 /* MyStudyDen.app */,
+				A00000000000000000000001 /* MyStudyDen.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -86,13 +86,13 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		APP0000000000000000000001 /* MyStudyDen */ = {
+		A00000000000000000000006 /* MyStudyDen */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = BCL000000000000000000002 /* Build configuration list for PBXNativeTarget "MyStudyDen" */;
+			buildConfigurationList = A00000000000000000000015 /* Build configuration list for PBXNativeTarget "MyStudyDen" */;
 			buildPhases = (
-				SRC0000000000000000000001 /* Sources */,
-				FW0000000000000000000001 /* Frameworks */,
-				RES0000000000000000000001 /* Resources */,
+				A00000000000000000000009 /* Sources */,
+				A00000000000000000000002 /* Frameworks */,
+				A00000000000000000000008 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -100,28 +100,28 @@
 			);
 			name = MyStudyDen;
 			packageProductDependencies = (
-				PKPROD000000000000000001 /* MyStudyDenCore */,
+				A00000000000000000000017 /* MyStudyDenCore */,
 			);
 			productName = MyStudyDen;
-			productReference = PROD000000000000000000001 /* MyStudyDen.app */;
+			productReference = A00000000000000000000001 /* MyStudyDen.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		PROJ000000000000000000001 /* Project object */ = {
+		A00000000000000000000007 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
-					APP0000000000000000000001 = {
+					A00000000000000000000006 = {
 						CreatedOnToolsVersion = 16.0;
 					};
 				};
 			};
-			buildConfigurationList = BCL000000000000000000001 /* Build configuration list for PBXProject "MyStudyDen" */;
+			buildConfigurationList = A00000000000000000000014 /* Build configuration list for PBXProject "MyStudyDen" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -129,21 +129,21 @@
 				en,
 				Base,
 			);
-			mainGroup = GRP0000000000000000000001;
+			mainGroup = A00000000000000000000003;
 			packageReferences = (
-				PKREF00000000000000000001 /* XCLocalSwiftPackageReference "." */,
+				A00000000000000000000016 /* XCLocalSwiftPackageReference "." */,
 			);
-			productRefGroup = GRP0000000000000000000003 /* Products */;
+			productRefGroup = A00000000000000000000005 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				APP0000000000000000000001 /* MyStudyDen */,
+				A00000000000000000000006 /* MyStudyDen */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		RES0000000000000000000001 /* Resources */ = {
+		A00000000000000000000008 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -154,7 +154,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		SRC0000000000000000000001 /* Sources */ = {
+		A00000000000000000000009 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -174,7 +174,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		BCONF00000000000000000001 /* Debug */ = {
+		A00000000000000000000010 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -235,7 +235,7 @@
 			};
 			name = Debug;
 		};
-		BCONF00000000000000000002 /* Release */ = {
+		A00000000000000000000011 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -290,7 +290,7 @@
 			};
 			name = Release;
 		};
-		BCONF00000000000000000003 /* Debug */ = {
+		A00000000000000000000012 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
@@ -325,7 +325,7 @@
 			};
 			name = Debug;
 		};
-		BCONF00000000000000000004 /* Release */ = {
+		A00000000000000000000013 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
@@ -363,20 +363,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		BCL000000000000000000001 /* Build configuration list for PBXProject "MyStudyDen" */ = {
+		A00000000000000000000014 /* Build configuration list for PBXProject "MyStudyDen" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BCONF00000000000000000001 /* Debug */,
-				BCONF00000000000000000002 /* Release */,
+				A00000000000000000000010 /* Debug */,
+				A00000000000000000000011 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		BCL000000000000000000002 /* Build configuration list for PBXNativeTarget "MyStudyDen" */ = {
+		A00000000000000000000015 /* Build configuration list for PBXNativeTarget "MyStudyDen" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BCONF00000000000000000003 /* Debug */,
-				BCONF00000000000000000004 /* Release */,
+				A00000000000000000000012 /* Debug */,
+				A00000000000000000000013 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -384,19 +384,19 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		PKREF00000000000000000001 /* XCLocalSwiftPackageReference "." */ = {
+		A00000000000000000000016 /* XCLocalSwiftPackageReference "." */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = .;
+			relativePath = ".";
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		PKPROD000000000000000001 /* MyStudyDenCore */ = {
+		A00000000000000000000017 /* MyStudyDenCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = PKREF00000000000000000001 /* XCLocalSwiftPackageReference "." */;
+			package = A00000000000000000000016 /* XCLocalSwiftPackageReference "." */;
 			productName = MyStudyDenCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = PROJ000000000000000000001 /* Project object */;
+	rootObject = A00000000000000000000007 /* Project object */;
 }
