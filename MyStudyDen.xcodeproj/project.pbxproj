@@ -19,6 +19,7 @@
 		BF0000000000000000000010 /* TaskKind+Symbol.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000010 /* TaskKind+Symbol.swift */; };
 		BF0000000000000000000011 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000011 /* Assets.xcassets */; };
 		BF0000000000000000000012 /* MyStudyDenCore in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000017 /* MyStudyDenCore */; };
+		A00000000000000000000019 /* AddSourceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000018 /* AddSourceView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +34,7 @@
 		F00000000000000000000009 /* ReviewQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/ReviewQueueView.swift"; sourceTree = "<group>"; };
 		F00000000000000000000010 /* TaskKind+Symbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/TaskKind+Symbol.swift"; sourceTree = "<group>"; };
 		F00000000000000000000011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A00000000000000000000018 /* AddSourceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/AddSourceView.swift"; sourceTree = "<group>"; };
 		A00000000000000000000001 /* MyStudyDen.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyStudyDen.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -68,6 +70,7 @@
 				F00000000000000000000007 /* CourseDashboardView.swift */,
 				F00000000000000000000008 /* PacketDetailView.swift */,
 				F00000000000000000000009 /* ReviewQueueView.swift */,
+				A00000000000000000000018 /* AddSourceView.swift */,
 				F00000000000000000000010 /* TaskKind+Symbol.swift */,
 				F00000000000000000000011 /* Assets.xcassets */,
 			);
@@ -167,6 +170,7 @@
 				BF0000000000000000000007 /* CourseDashboardView.swift in Sources */,
 				BF0000000000000000000008 /* PacketDetailView.swift in Sources */,
 				BF0000000000000000000009 /* ReviewQueueView.swift in Sources */,
+				A00000000000000000000019 /* AddSourceView.swift in Sources */,
 				BF0000000000000000000010 /* TaskKind+Symbol.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -4,6 +4,7 @@ import MyStudyDenCore
 struct CourseDashboardView: View {
     @Bindable var store: AppStore
     let course: Course
+    @State private var isShowingAddSource = false
 
     var body: some View {
         let dashboard = store.dashboard(for: course)
@@ -83,6 +84,17 @@ struct CourseDashboardView: View {
             }
         }
         .navigationTitle(course.title)
+        .sheet(isPresented: $isShowingAddSource) {
+            AddSourceView(course: course) { form in
+                await store.addStudySource(
+                    title: form.title,
+                    type: form.type,
+                    rawText: form.rawText,
+                    intent: form.intent,
+                    to: course
+                )
+            }
+        }
         .alert(
             "Packet generation failed",
             isPresented: Binding(
@@ -102,11 +114,9 @@ struct CourseDashboardView: View {
         }
         .toolbar {
             Button {
-                Task {
-                    await store.addMockPacket(to: course)
-                }
+                isShowingAddSource = true
             } label: {
-                Label("Add Packet", systemImage: "plus")
+                Label("Add Source", systemImage: "plus")
             }
         }
     }

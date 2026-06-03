@@ -78,13 +78,19 @@ final class AppStore {
     }
 
     @MainActor
-    func addMockPacket(to course: Course) async {
+    func addStudySource(
+        title: String,
+        type: StudySourceType,
+        rawText: String,
+        intent: CaptureIntent,
+        to course: Course
+    ) async {
         let source = StudySource(
             courseID: course.id,
-            title: "Captured course note",
-            type: .personalNote,
-            rawText: "Paste or share course material here. MyStudyDen will turn it into a compact packet, concepts, and review questions.",
-            intent: .organize
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+            type: type,
+            rawText: rawText.trimmingCharacters(in: .whitespacesAndNewlines),
+            intent: intent
         )
 
         do {
