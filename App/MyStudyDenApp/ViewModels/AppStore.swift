@@ -60,6 +60,12 @@ final class AppStore {
             .sorted { $0.generatedAt > $1.generatedAt }
     }
 
+    func sources(for course: Course) -> [StudySource] {
+        sources
+            .filter { $0.courseID == course.id }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
     func dashboard(for course: Course) -> CourseDashboard {
         let coursePackets = packets(for: course)
         return CourseDashboard(

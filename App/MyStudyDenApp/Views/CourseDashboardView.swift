@@ -8,6 +8,7 @@ struct CourseDashboardView: View {
 
     var body: some View {
         let dashboard = store.dashboard(for: course)
+        let courseSources = store.sources(for: course)
 
         List {
             Section("Next") {
@@ -20,6 +21,33 @@ struct CourseDashboardView: View {
                 } else {
                     ForEach(dashboard.upcomingTasks) { task in
                         Label(task.title, systemImage: task.kind.symbolName)
+                    }
+                }
+            }
+
+            Section("Sources") {
+                if courseSources.isEmpty {
+                    ContentUnavailableView(
+                        "No sources yet",
+                        systemImage: "doc.text",
+                        description: Text("Added notes, prompts, and pasted material will appear here.")
+                    )
+                } else {
+                    ForEach(courseSources) { source in
+                        NavigationLink {
+                            SourceDetailView(source: source)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(source.title)
+                                    .font(.headline)
+                                HStack(spacing: 8) {
+                                    Text(source.type.displayName)
+                                    Text(source.intent.displayName)
+                                }
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
             }

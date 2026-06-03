@@ -98,46 +98,4 @@ private extension StudySourceType {
     static var captureOptions: [StudySourceType] {
         [.personalNote, .text, .url, .transcript, .assignmentPrompt, .examReview, .aiConversation, .notebookLM]
     }
-
-    var displayName: String {
-        switch self {
-        case .text:
-            "Pasted Text"
-        case .personalNote:
-            "Personal Note"
-        case .url:
-            "URL"
-        case .pdf:
-            "PDF"
-        case .slides:
-            "Slides"
-        case .transcript:
-            "Transcript"
-        case .notebookLM:
-            "NotebookLM"
-        case .aiConversation:
-            "AI Conversation"
-        case .assignmentPrompt:
-            "Assignment Prompt"
-        case .examReview:
-            "Exam Review"
-        }
-    }
-}
-
-private extension CaptureIntent {
-    var displayName: String {
-        switch self {
-        case .organize:
-            "Organize"
-        case .studyGuide:
-            "Study Guide"
-        case .quizMe:
-            "Quiz Me"
-        case .explainSimply:
-            "Explain Simply"
-        case .prepareForExam:
-            "Prepare for Exam"
-        }
-    }
 }
