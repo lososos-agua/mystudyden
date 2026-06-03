@@ -31,6 +31,7 @@ struct PacketDetailView: View {
                         ForEach(concept.keyPoints, id: \.self) { keyPoint in
                             Label(keyPoint, systemImage: "circle.fill")
                                 .font(.subheadline)
+                                .foregroundStyle(.primary, StudyDenTheme.apricot)
                         }
                     }
                 }
@@ -58,6 +59,7 @@ struct PacketDetailView: View {
                 }
             }
         }
+        .studyDenListBackground()
         .navigationTitle(packet.title)
     }
 }

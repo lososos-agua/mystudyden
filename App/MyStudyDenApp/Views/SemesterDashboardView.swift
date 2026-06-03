@@ -55,6 +55,7 @@ struct SemesterDashboardView: View {
                 }
             }
         }
+        .studyDenListBackground()
         .navigationTitle(store.semester.title)
     }
 }

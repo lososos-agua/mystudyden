@@ -21,6 +21,7 @@
 		BF0000000000000000000012 /* MyStudyDenCore in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000017 /* MyStudyDenCore */; };
 		A00000000000000000000019 /* AddSourceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000018 /* AddSourceView.swift */; };
 		A00000000000000000000021 /* SourceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000020 /* SourceDetailView.swift */; };
+		A00000000000000000000023 /* StudyDenTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000022 /* StudyDenTheme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +38,7 @@
 		F00000000000000000000011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A00000000000000000000018 /* AddSourceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/AddSourceView.swift"; sourceTree = "<group>"; };
 		A00000000000000000000020 /* SourceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/SourceDetailView.swift"; sourceTree = "<group>"; };
+		A00000000000000000000022 /* StudyDenTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/StudyDenTheme.swift"; sourceTree = "<group>"; };
 		A00000000000000000000001 /* MyStudyDen.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyStudyDen.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -74,6 +76,7 @@
 				F00000000000000000000009 /* ReviewQueueView.swift */,
 				A00000000000000000000018 /* AddSourceView.swift */,
 				A00000000000000000000020 /* SourceDetailView.swift */,
+				A00000000000000000000022 /* StudyDenTheme.swift */,
 				F00000000000000000000010 /* TaskKind+Symbol.swift */,
 				F00000000000000000000011 /* Assets.xcassets */,
 			);
@@ -175,6 +178,7 @@
 				BF0000000000000000000009 /* ReviewQueueView.swift in Sources */,
 				A00000000000000000000019 /* AddSourceView.swift in Sources */,
 				A00000000000000000000021 /* SourceDetailView.swift in Sources */,
+				A00000000000000000000023 /* StudyDenTheme.swift in Sources */,
 				BF0000000000000000000010 /* TaskKind+Symbol.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

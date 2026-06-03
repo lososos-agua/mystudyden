@@ -24,6 +24,7 @@ struct CourseListView: View {
                 }
             }
         }
+        .studyDenListBackground()
         .navigationTitle("Courses")
     }
 }

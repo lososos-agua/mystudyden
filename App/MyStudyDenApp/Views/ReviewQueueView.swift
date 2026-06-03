@@ -25,6 +25,7 @@ struct ReviewQueueView: View {
                 }
             }
         }
+        .studyDenListBackground()
         .navigationTitle("Review")
     }
 }

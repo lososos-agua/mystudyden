@@ -8,7 +8,7 @@ struct MyStudyDenApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(store: store)
+                .tint(StudyDenTheme.apricot)
         }
     }
 }
-

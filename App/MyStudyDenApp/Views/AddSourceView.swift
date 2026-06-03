@@ -43,6 +43,7 @@ struct AddSourceView: View {
                         .textInputAutocapitalization(.sentences)
                 }
             }
+            .studyDenListBackground()
             .navigationTitle("Add Source")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

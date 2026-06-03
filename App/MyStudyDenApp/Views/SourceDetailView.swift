@@ -20,6 +20,7 @@ struct SourceDetailView: View {
                     .textSelection(.enabled)
             }
         }
+        .studyDenListBackground()
         .navigationTitle(source.title)
     }
 }

@@ -21,6 +21,7 @@ struct CourseDashboardView: View {
                 } else {
                     ForEach(dashboard.upcomingTasks) { task in
                         Label(task.title, systemImage: task.kind.symbolName)
+                            .foregroundStyle(.primary, StudyDenTheme.apricot)
                     }
                 }
             }
@@ -111,6 +112,7 @@ struct CourseDashboardView: View {
                 }
             }
         }
+        .studyDenListBackground()
         .navigationTitle(course.title)
         .sheet(isPresented: $isShowingAddSource) {
             AddSourceView(course: course) { form in
