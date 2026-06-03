@@ -1,10 +1,9 @@
 {
   "images" : [
     {
-      "filename" : "app-icon-nook-v3.png",
+      "filename" : "study-den-illustration.png",
       "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
+      "scale" : "1x"
     }
   ],
   "info" : {
