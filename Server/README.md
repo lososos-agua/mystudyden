@@ -25,6 +25,13 @@ LLM_PROVIDER=openai
 OPENAI_MODEL=gpt-5-mini
 ```
 
+To use Gemini as a low-cost production candidate:
+
+```text
+LLM_PROVIDER=gemini
+GEMINI_MODEL=gemini-2.5-flash-lite
+```
+
 ## Run
 
 ```sh

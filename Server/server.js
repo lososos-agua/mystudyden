@@ -8,7 +8,12 @@ const port = Number(process.env.PORT || 8787);
 const llmProvider = (process.env.LLM_PROVIDER || "openrouter").toLowerCase();
 const openAIModel = process.env.OPENAI_MODEL || "gpt-5-mini";
 const openRouterModel = process.env.OPENROUTER_MODEL || "openrouter/free";
-const activeModel = llmProvider === "openai" ? openAIModel : openRouterModel;
+const geminiModel = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+const activeModel = {
+  gemini: geminiModel,
+  openai: openAIModel,
+  openrouter: openRouterModel
+}[llmProvider] || openRouterModel;
 
 const server = http.createServer(async (request, response) => {
   try {
@@ -17,6 +22,7 @@ const server = http.createServer(async (request, response) => {
         ok: true,
         provider: llmProvider,
         model: activeModel,
+        hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
         hasOpenAIKey: Boolean(process.env.OPENAI_API_KEY),
         hasOpenRouterKey: Boolean(process.env.OPENROUTER_API_KEY)
       });
@@ -54,6 +60,10 @@ async function generateStudyPacket({ course, source }) {
 
   if (llmProvider === "openai") {
     return generateWithOpenAI(course, source);
+  }
+
+  if (llmProvider === "gemini") {
+    return generateWithGemini(course, source);
   }
 
   throw httpError(500, `Unsupported LLM_PROVIDER: ${llmProvider}`);
@@ -102,6 +112,55 @@ async function generateWithOpenRouter(course, source) {
   const outputText = payload?.choices?.[0]?.message?.content;
   if (!outputText) {
     throw httpError(502, "OpenRouter response did not include message content.");
+  }
+
+  const draft = parseModelJSON(outputText);
+  return normalizeStudyPacketDraft(draft, source, course);
+}
+
+async function generateWithGemini(course, source) {
+  if (!process.env.GEMINI_API_KEY) {
+    throw httpError(500, "GEMINI_API_KEY is missing. Create Server/.env from Server/.env.example.");
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": process.env.GEMINI_API_KEY
+    },
+    body: JSON.stringify({
+      systemInstruction: {
+        parts: [
+          {
+            text: "You turn course materials into concise, useful study packets. Return JSON only."
+          }
+        ]
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: buildStudyPacketPrompt(course, source) }]
+        }
+      ],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseJsonSchema: geminiStudyPacketDraftSchema(),
+        temperature: 0.2
+      }
+    })
+  });
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw httpError(response.status, payload?.error?.message || "Gemini request failed.");
+  }
+
+  const outputText = extractGeminiText(payload);
+  if (!outputText) {
+    throw httpError(502, "Gemini response did not include text output.");
   }
 
   const draft = parseModelJSON(outputText);
@@ -257,6 +316,32 @@ function studyPacketDraftSchema() {
   };
 }
 
+function geminiStudyPacketDraftSchema() {
+  return removeUnsupportedGeminiSchemaFields(studyPacketDraftSchema());
+}
+
+function removeUnsupportedGeminiSchemaFields(value) {
+  if (Array.isArray(value)) {
+    return value.map(removeUnsupportedGeminiSchemaFields);
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const copy = {};
+
+  for (const [key, nestedValue] of Object.entries(value)) {
+    if (["additionalProperties"].includes(key)) {
+      continue;
+    }
+
+    copy[key] = removeUnsupportedGeminiSchemaFields(nestedValue);
+  }
+
+  return copy;
+}
+
 function studyPacketDraftSchemaShape() {
   return {
     title: "string",
@@ -332,6 +417,18 @@ function extractOutputText(payload) {
     for (const content of item.content || []) {
       if (typeof content.text === "string") {
         return content.text;
+      }
+    }
+  }
+
+  return null;
+}
+
+function extractGeminiText(payload) {
+  for (const candidate of payload?.candidates || []) {
+    for (const part of candidate.content?.parts || []) {
+      if (typeof part.text === "string") {
+        return part.text;
       }
     }
   }
