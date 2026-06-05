@@ -1,6 +1,7 @@
 # MyStudyDen Local Server
 
-This small local server keeps the OpenAI API key off the iOS app during development.
+This small local server keeps LLM API keys off the iOS app during development.
+It defaults to OpenRouter so you can use free models while prototyping.
 
 ## Setup
 
@@ -8,7 +9,21 @@ This small local server keeps the OpenAI API key off the iOS app during developm
 cp .env.example .env
 ```
 
-Edit `.env` and set `OPENAI_API_KEY`.
+Edit `.env` and set `OPENROUTER_API_KEY`.
+
+The default development config is:
+
+```text
+LLM_PROVIDER=openrouter
+OPENROUTER_MODEL=openrouter/free
+```
+
+To use OpenAI instead:
+
+```text
+LLM_PROVIDER=openai
+OPENAI_MODEL=gpt-5-mini
+```
 
 ## Run
 

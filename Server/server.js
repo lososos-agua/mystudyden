@@ -5,15 +5,20 @@ import { join } from "node:path";
 loadDotEnv();
 
 const port = Number(process.env.PORT || 8787);
+const llmProvider = (process.env.LLM_PROVIDER || "openrouter").toLowerCase();
 const openAIModel = process.env.OPENAI_MODEL || "gpt-5-mini";
+const openRouterModel = process.env.OPENROUTER_MODEL || "openrouter/free";
+const activeModel = llmProvider === "openai" ? openAIModel : openRouterModel;
 
 const server = http.createServer(async (request, response) => {
   try {
     if (request.method === "GET" && request.url === "/health") {
       writeJSON(response, 200, {
         ok: true,
-        model: openAIModel,
-        hasOpenAIKey: Boolean(process.env.OPENAI_API_KEY)
+        provider: llmProvider,
+        model: activeModel,
+        hasOpenAIKey: Boolean(process.env.OPENAI_API_KEY),
+        hasOpenRouterKey: Boolean(process.env.OPENROUTER_API_KEY)
       });
       return;
     }
@@ -21,7 +26,7 @@ const server = http.createServer(async (request, response) => {
     if (request.method === "POST" && request.url === "/generate-study-packet") {
       const body = await readJSON(request);
       const draft = await generateStudyPacket(body);
-      writeJSON(response, 200, { draft, provider: "openai" });
+      writeJSON(response, 200, { draft, provider: llmProvider, model: activeModel });
       return;
     }
 
@@ -39,12 +44,73 @@ server.listen(port, "0.0.0.0", () => {
 });
 
 async function generateStudyPacket({ course, source }) {
-  if (!process.env.OPENAI_API_KEY) {
-    throw httpError(500, "OPENAI_API_KEY is missing. Create Server/.env from Server/.env.example.");
-  }
-
   if (!course || !source) {
     throw httpError(400, "Request must include course and source.");
+  }
+
+  if (llmProvider === "openrouter") {
+    return generateWithOpenRouter(course, source);
+  }
+
+  if (llmProvider === "openai") {
+    return generateWithOpenAI(course, source);
+  }
+
+  throw httpError(500, `Unsupported LLM_PROVIDER: ${llmProvider}`);
+}
+
+async function generateWithOpenRouter(course, source) {
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw httpError(500, "OPENROUTER_API_KEY is missing. Create Server/.env from Server/.env.example.");
+  }
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": process.env.APP_PUBLIC_URL || "http://localhost:8787",
+      "X-Title": "MyStudyDen"
+    },
+    body: JSON.stringify({
+      model: openRouterModel,
+      messages: [
+        {
+          role: "system",
+          content: [
+            "You turn course materials into concise, useful study packets.",
+            "Return only valid JSON matching this shape:",
+            JSON.stringify(studyPacketDraftSchemaShape())
+          ].join("\n")
+        },
+        {
+          role: "user",
+          content: buildStudyPacketPrompt(course, source)
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2
+    })
+  });
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw httpError(response.status, payload?.error?.message || "OpenRouter request failed.");
+  }
+
+  const outputText = payload?.choices?.[0]?.message?.content;
+  if (!outputText) {
+    throw httpError(502, "OpenRouter response did not include message content.");
+  }
+
+  const draft = parseModelJSON(outputText);
+  return normalizeStudyPacketDraft(draft, source, course);
+}
+
+async function generateWithOpenAI(course, source) {
+  if (!process.env.OPENAI_API_KEY) {
+    throw httpError(500, "OPENAI_API_KEY is missing. Create Server/.env from Server/.env.example.");
   }
 
   const response = await fetch("https://api.openai.com/v1/responses", {
@@ -87,7 +153,7 @@ async function generateStudyPacket({ course, source }) {
     throw httpError(502, "OpenAI response did not include text output.");
   }
 
-  const draft = JSON.parse(outputText);
+  const draft = parseModelJSON(outputText);
   return normalizeStudyPacketDraft(draft, source, course);
 }
 
@@ -191,6 +257,36 @@ function studyPacketDraftSchema() {
   };
 }
 
+function studyPacketDraftSchemaShape() {
+  return {
+    title: "string",
+    compactSummary: "string",
+    outline: ["string"],
+    studyGuide: "string",
+    conceptChunks: [
+      {
+        title: "string",
+        summary: "string",
+        keyPoints: ["string"],
+        keywords: ["string"]
+      }
+    ],
+    keyTerms: [
+      {
+        term: "string",
+        definition: "string"
+      }
+    ],
+    reviewQuestions: [
+      {
+        question: "string",
+        answerHint: "string",
+        difficulty: 1
+      }
+    ]
+  };
+}
+
 function normalizeStudyPacketDraft(draft, source, course) {
   return {
     title: nonEmptyString(draft.title, source.title || `${course.title} Study Packet`),
@@ -241,6 +337,21 @@ function extractOutputText(payload) {
   }
 
   return null;
+}
+
+function parseModelJSON(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+
+    if (start >= 0 && end > start) {
+      return JSON.parse(text.slice(start, end + 1));
+    }
+
+    throw httpError(502, "Model response was not valid JSON.");
+  }
 }
 
 function nonEmptyString(value, fallback) {
