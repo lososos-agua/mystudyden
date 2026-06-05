@@ -26,6 +26,16 @@ struct CourseDashboardView: View {
                 }
             }
 
+            #if DEBUG
+            if let status = store.lastGenerationStatus {
+                Section("AI Status") {
+                    Text(status)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            #endif
+
             Section("Sources") {
                 if courseSources.isEmpty {
                     ContentUnavailableView(

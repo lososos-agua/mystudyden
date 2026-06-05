@@ -17,6 +17,17 @@ const activeModel = {
 
 const server = http.createServer(async (request, response) => {
   try {
+    console.log(`${new Date().toISOString()} ${request.method} ${request.url}`);
+
+    if (request.method === "GET" && request.url === "/") {
+      writeJSON(response, 200, {
+        ok: true,
+        message: "MyStudyDen local server is running.",
+        endpoints: ["GET /health", "POST /generate-study-packet"]
+      });
+      return;
+    }
+
     if (request.method === "GET" && request.url === "/health") {
       writeJSON(response, 200, {
         ok: true,
@@ -39,6 +50,7 @@ const server = http.createServer(async (request, response) => {
     writeJSON(response, 404, { error: "Not found" });
   } catch (error) {
     const statusCode = error.statusCode || 500;
+    console.error(`${new Date().toISOString()} error ${statusCode}: ${error.message || error}`);
     writeJSON(response, statusCode, {
       error: error.message || "Unexpected server error"
     });

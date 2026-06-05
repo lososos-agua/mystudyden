@@ -169,8 +169,19 @@ public struct RemoteReviewQuestion: Codable, Sendable {
     }
 }
 
-public enum RemoteAIProviderError: Error, Equatable, Sendable {
+public enum RemoteAIProviderError: Error, Equatable, LocalizedError, Sendable {
     case invalidResponse
     case serverError(statusCode: Int, message: String)
     case unsupportedEndpoint(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidResponse:
+            "The remote server returned an invalid response."
+        case let .serverError(statusCode, message):
+            "HTTP \(statusCode): \(message)"
+        case let .unsupportedEndpoint(endpoint):
+            "Unsupported remote endpoint: \(endpoint)"
+        }
+    }
 }

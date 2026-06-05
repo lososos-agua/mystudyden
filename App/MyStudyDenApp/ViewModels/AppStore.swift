@@ -9,27 +9,26 @@ final class AppStore {
     var packets: [StudyPacket]
     var tasks: [TaskItem]
     private(set) var generationErrorMessage: String?
+    private(set) var lastGenerationStatus: String?
 
-    private let aiProvider: AIProvider
+    private let aiProviders: [NamedAIProvider]
 
     init(
         semester: Semester,
         sources: [StudySource] = [],
         packets: [StudyPacket] = [],
         tasks: [TaskItem] = [],
-        aiProvider: AIProvider = FallbackAIProvider(
-            primary: RemoteAIProvider(),
-            fallback: FallbackAIProvider(
-                primary: AppleFoundationAIProvider(),
-                fallback: MockAIProvider()
-            )
-        )
+        aiProviders: [NamedAIProvider] = [
+            NamedAIProvider(name: "Remote OpenRouter", provider: RemoteAIProvider()),
+            NamedAIProvider(name: "Apple Foundation", provider: AppleFoundationAIProvider()),
+            NamedAIProvider(name: "Mock", provider: MockAIProvider())
+        ]
     ) {
         self.semester = semester
         self.sources = sources
         self.packets = packets
         self.tasks = tasks
-        self.aiProvider = aiProvider
+        self.aiProviders = aiProviders
     }
 
     var courses: [Course] {
@@ -105,15 +104,26 @@ final class AppStore {
             intent: intent
         )
 
-        do {
-            let draft = try await aiProvider.generateStudyPacket(from: source, course: course)
-            let packet = StudyPacketFactory.makePacket(from: draft, source: source, course: course)
-            sources.append(source)
-            packets.append(packet)
-            generationErrorMessage = nil
-        } catch {
-            generationErrorMessage = "Could not generate a study packet. Please try again."
+        var providerErrors: [String] = []
+
+        for namedProvider in aiProviders {
+            do {
+                lastGenerationStatus = "Trying \(namedProvider.name)..."
+                let draft = try await namedProvider.provider.generateStudyPacket(from: source, course: course)
+                let packet = StudyPacketFactory.makePacket(from: draft, source: source, course: course)
+                sources.append(source)
+                packets.append(packet)
+                generationErrorMessage = nil
+                lastGenerationStatus = "Generated with \(namedProvider.name)"
+                return
+            } catch {
+                let message = "\(namedProvider.name): \(Self.describe(error))"
+                providerErrors.append(message)
+                lastGenerationStatus = "Failed \(message)"
+            }
         }
+
+        generationErrorMessage = "Could not generate a study packet. \(providerErrors.last ?? "Please try again.")"
     }
 
     private func sortedIncompleteTasks(_ tasks: [TaskItem]) -> [TaskItem] {
@@ -132,6 +142,20 @@ final class AppStore {
                 }
             }
     }
+
+    private static func describe(_ error: Error) -> String {
+        if let localizedError = error as? LocalizedError,
+           let errorDescription = localizedError.errorDescription {
+            return errorDescription
+        }
+
+        return String(describing: error)
+    }
+}
+
+struct NamedAIProvider {
+    var name: String
+    var provider: AIProvider
 }
 
 extension AppStore {
