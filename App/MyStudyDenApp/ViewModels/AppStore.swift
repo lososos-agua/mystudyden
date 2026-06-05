@@ -21,8 +21,7 @@ final class AppStore {
         tasks: [TaskItem] = [],
         aiProviders: [NamedAIProvider] = [
             NamedAIProvider(name: "Remote OpenRouter", provider: RemoteAIProvider()),
-            NamedAIProvider(name: "Apple Foundation", provider: AppleFoundationAIProvider()),
-            NamedAIProvider(name: "Mock", provider: MockAIProvider())
+            NamedAIProvider(name: "Apple Foundation", provider: AppleFoundationAIProvider())
         ],
         persistence: AppStorePersistence? = .live
     ) {

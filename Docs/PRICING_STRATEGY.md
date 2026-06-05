@@ -224,7 +224,7 @@ For MyStudyDen:
 
 ```text
 Default: cheap model for packet generation
-Fallback: source-backed deterministic server logic
+Failure handling: show a clear error when the model does not return a useful packet
 Premium retry: better model only when needed
 ```
 
@@ -313,7 +313,7 @@ Before adding more AI features, decide:
    - Recommended: 8,000-12,000 characters initially.
 
 5. What model should be the production default?
-   - Recommended: Gemini Flash-Lite class model, with server fallback.
+   - Recommended: Gemini Flash-Lite class model, with strict server validation.
 
 6. Should there be a Pro tier at launch?
    - Recommended: not necessary at first. Start with one plan and add Pro after measuring usage.
@@ -329,7 +329,7 @@ Trial: 30 days
 Trial cap: 50 packets
 Paid cap: 150 packets/month
 Model: Gemini Flash-Lite class
-Fallback: server source-backed generation
+Failure handling: reject sparse model results and ask the user to retry
 ```
 
 Add later:

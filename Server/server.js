@@ -147,39 +147,15 @@ async function generateWithOpenRouter(course, source) {
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
-    logEvent("generation.source_fallback", {
-      provider: llmProvider,
-      model: activeModel,
-      sourceTitle: source.title,
-      reason: payload?.error?.message || `OpenRouter request failed with HTTP ${response.status}.`
-    });
-    return normalizeStudyPacketDraft({}, source, course);
+    throw httpError(response.status, payload?.error?.message || "OpenRouter request failed.");
   }
 
   const outputText = payload?.choices?.[0]?.message?.content;
   if (!outputText) {
-    logEvent("generation.source_fallback", {
-      provider: llmProvider,
-      model: activeModel,
-      sourceTitle: source.title,
-      reason: "OpenRouter response did not include message content."
-    });
-    return normalizeStudyPacketDraft({}, source, course);
+    throw httpError(502, "OpenRouter response did not include usable study packet content.");
   }
 
-  let draft;
-  try {
-    draft = parseModelJSON(outputText);
-  } catch (error) {
-    logEvent("generation.source_fallback", {
-      provider: llmProvider,
-      model: activeModel,
-      sourceTitle: source.title,
-      reason: error.message || String(error)
-    });
-    draft = {};
-  }
-
+  const draft = parseModelJSON(outputText);
   return normalizeStudyPacketDraft(draft, source, course);
 }
 
@@ -437,300 +413,34 @@ function studyPacketDraftSchemaShape() {
   };
 }
 
-function normalizeStudyPacketDraft(draft = {}, source, course) {
-  const fallback = sourceBackedStudyPacketDraft(source, course);
-
-  return {
-    title: nonEmptyString(draft.title, fallback.title),
-    compactSummary: nonEmptyString(draft.compactSummary, fallback.compactSummary),
-    outline: nonEmptyArray(draft.outline, fallback.outline),
-    studyGuide: nonEmptyString(draft.studyGuide, fallback.studyGuide),
-    conceptChunks: nonEmptyArray(draft.conceptChunks, fallback.conceptChunks).map((concept, index) => {
-      const fallbackConcept = fallback.conceptChunks[index] || fallback.conceptChunks[0];
-
-      return {
-        title: nonEmptyString(concept.title, fallbackConcept.title),
-        summary: nonEmptyString(concept.summary, fallbackConcept.summary),
-        keyPoints: nonEmptyArray(concept.keyPoints, fallbackConcept.keyPoints),
-        keywords: nonEmptyArray(concept.keywords, fallbackConcept.keywords)
-      };
-    }),
-    keyTerms: nonEmptyArray(draft.keyTerms, fallback.keyTerms).map((term, index) => {
-      const fallbackTerm = fallback.keyTerms[index] || fallback.keyTerms[0];
-
-      return {
-        term: nonEmptyString(term.term, fallbackTerm.term),
-        definition: nonEmptyString(term.definition, fallbackTerm.definition)
-      };
-    }),
-    reviewQuestions: nonEmptyArray(draft.reviewQuestions, fallback.reviewQuestions).map((question, index) => {
-      const fallbackQuestion = fallback.reviewQuestions[index] || fallback.reviewQuestions[0];
-
-      return {
-        question: nonEmptyString(question.question, fallbackQuestion.question),
-        answerHint: nonEmptyString(question.answerHint, fallbackQuestion.answerHint),
-        difficulty: clampInteger(question.difficulty, 1, 3, fallbackQuestion.difficulty)
-      };
-    })
-  };
-}
-
-function sourceBackedStudyPacketDraft(source, course) {
-  const sentences = splitSentences(source.rawText);
-  const paragraphs = splitParagraphs(source.rawText);
-  const keyTerms = extractKeyTerms(source.rawText, sentences);
-  const conceptChunks = makeConceptChunks(paragraphs, sentences, keyTerms);
-  const compactSummary = makeCompactSummary(sentences, keyTerms, source, course);
-  const outline = sentences.slice(0, 4).map(shortenSentence);
-
-  return {
-    title: `${source.title || course.title} Study Packet`,
-    compactSummary,
-    outline: outline.length > 0 ? outline : [`Review ${source.title || course.title}`],
-    studyGuide: [
-      "Read the compact summary first.",
-      "Explain the key terms without looking at the source.",
-      "Answer each review question from memory, then check the source text."
-    ].join(" "),
-    conceptChunks,
-    keyTerms,
-    reviewQuestions: makeReviewQuestions(keyTerms, sentences)
-  };
-}
-
-function splitParagraphs(text) {
-  return String(text || "")
-    .split(/\r?\n+/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
-}
-
-function splitSentences(text) {
-  return String(text || "")
-    .replace(/\s+/g, " ")
-    .match(/[^.!?]+[.!?]+|[^.!?]+$/g)
-    ?.map((sentence) => sentence.trim())
-    .filter(Boolean) || [];
-}
-
-function shortenSentence(sentence) {
-  const words = sentence.replace(/[.!?]+$/g, "").split(/\s+/).filter(Boolean);
-  return words.slice(0, 18).join(" ");
-}
-
-function makeCompactSummary(sentences, keyTerms, source, course) {
-  const strongestSentences = sentences
-    .map((sentence) => ({
-      sentence,
-      score: keyTerms.reduce((score, term) => {
-        return score + (sentence.toLowerCase().includes(term.term.toLowerCase()) ? 2 : 0);
-      }, sentence.length > 80 ? 1 : 0)
+function normalizeStudyPacketDraft(draft) {
+  const normalized = {
+    title: requiredString(draft.title, "title"),
+    compactSummary: requiredString(draft.compactSummary, "compactSummary"),
+    outline: requiredStringArray(draft.outline, "outline"),
+    studyGuide: requiredString(draft.studyGuide, "studyGuide"),
+    conceptChunks: requiredArray(draft.conceptChunks, "conceptChunks").map((concept, index) => ({
+      title: requiredString(concept.title, `conceptChunks[${index}].title`),
+      summary: requiredString(concept.summary, `conceptChunks[${index}].summary`),
+      keyPoints: requiredStringArray(concept.keyPoints, `conceptChunks[${index}].keyPoints`),
+      keywords: requiredStringArray(concept.keywords, `conceptChunks[${index}].keywords`)
+    })),
+    keyTerms: requiredArray(draft.keyTerms, "keyTerms").map((term, index) => ({
+      term: requiredString(term.term, `keyTerms[${index}].term`),
+      definition: requiredString(term.definition, `keyTerms[${index}].definition`)
+    })),
+    reviewQuestions: requiredArray(draft.reviewQuestions, "reviewQuestions").map((question, index) => ({
+      question: requiredString(question.question, `reviewQuestions[${index}].question`),
+      answerHint: requiredString(question.answerHint, `reviewQuestions[${index}].answerHint`),
+      difficulty: clampInteger(question.difficulty, 1, 3, 1)
     }))
-    .sort((lhs, rhs) => rhs.score - lhs.score)
-    .slice(0, 2)
-    .map(({ sentence }) => sentence);
+  };
 
-  return strongestSentences.join(" ")
-    || sentences.slice(0, 2).join(" ")
-    || `Review ${source.title} for ${course.title}.`;
-}
-
-function makeConceptChunks(paragraphs, sentences, keyTerms) {
-  const sourceParagraphs = paragraphs.length > 1
-    ? paragraphs.slice(0, 3)
-    : sentences.slice(0, 3);
-  const chunks = sourceParagraphs
-    .map((paragraph, index) => {
-      const paragraphSentences = splitSentences(paragraph);
-      const summary = paragraphSentences[0] || paragraph;
-      const keyPoints = paragraphSentences.slice(1, 4).map(shortenSentence);
-      const keywords = keyTerms.slice(index, index + 2).map((term) => term.term);
-
-      return {
-        title: titleFromSentence(summary),
-        summary,
-        keyPoints: keyPoints.length > 0 ? keyPoints : [shortenSentence(summary)],
-        keywords: keywords.length > 0 ? keywords : [titleFromSentence(summary)]
-      };
-    })
-    .filter((chunk) => chunk.summary);
-
-  return chunks.length > 0 ? chunks : [{
-    title: "Source Review",
-    summary: "Review the source material and identify the main learning points.",
-    keyPoints: ["Connect each idea to the course goal."],
-    keywords: ["review"]
-  }];
-}
-
-function titleFromSentence(sentence) {
-  const words = sentence
-    .replace(/[^a-zA-Z0-9 -]/g, "")
-    .split(/\s+/)
-    .filter((word) => word.length > 2)
-    .slice(0, 5);
-
-  return words.length > 0 ? titleCase(words.join(" ")) : "Main Concept";
-}
-
-function extractKeyTerms(text, sentences) {
-  const normalizedText = String(text || "").toLowerCase();
-  const stopwords = new Set([
-    "the", "and", "that", "this", "with", "from", "during", "there", "while", "student",
-    "students", "source", "material", "learning", "study", "studying", "information",
-    "important", "process", "often", "helps", "more", "less", "later", "before", "because",
-    "than", "after", "future", "related", "learned", "plays", "role", "common", "mistake",
-    "better", "strategy", "practical", "terms"
-  ]);
-  const weakEdges = new Set([
-    "because", "strengthens", "improves", "helps", "correct", "focus", "plays", "important",
-    "related", "learned", "called", "matter", "connected", "making", "unusual", "common",
-    "mistake", "staying", "extra", "feel", "productive", "reduces", "spend", "remember",
-    "combine", "reviewing", "briefly", "works", "already", "practiced", "replace", "organize",
-    "avoid", "review", "test", "protect", "good", "part"
-  ]);
-  const words = normalizedText
-    .replace(/[^a-z0-9 -]/g, " ")
-    .split(/\s+/)
-    .filter((word) => word.length > 2);
-  const scores = new Map();
-
-  for (const phrase of knownStudyTerms(normalizedText)) {
-    scores.set(phrase, (scores.get(phrase) || 0) + 100);
+  if (normalized.conceptChunks.length < 1 || normalized.keyTerms.length < 2 || normalized.reviewQuestions.length < 2) {
+    throw httpError(502, "Model response was too sparse to create a useful study packet.");
   }
 
-  for (let size = 1; size <= 2; size += 1) {
-    for (let index = 0; index <= words.length - size; index += 1) {
-      const phraseWords = words.slice(index, index + size);
-      const phrase = phraseWords.join(" ");
-
-      if (!isUsefulPhrase(phraseWords, stopwords, weakEdges)) {
-        continue;
-      }
-
-      const score = size === 2 ? 6 : 2;
-      scores.set(phrase, (scores.get(phrase) || 0) + score);
-    }
-  }
-
-  const terms = [...scores.entries()]
-    .filter(([phrase]) => isUsefulPhrase(phrase.split(" "), stopwords, weakEdges))
-    .sort((lhs, rhs) => rhs[1] - lhs[1] || rhs[0].length - lhs[0].length)
-    .reduce((selected, [phrase, score]) => {
-      if (selected.some(([selectedPhrase]) => phrasesOverlap(selectedPhrase, phrase))) {
-        return selected;
-      }
-
-      return [...selected, [phrase, score]];
-    }, [])
-    .slice(0, 5)
-    .map(([phrase]) => ({
-      term: titleCase(phrase),
-      definition: definitionForPhrase(phrase, sentences)
-    }));
-
-  return terms.length > 0 ? terms : [{
-    term: titleCase(sourceTitleFallback(text)),
-    definition: "A central idea from the source material."
-  }];
-}
-
-function knownStudyTerms(text) {
-  return [
-    "active recall",
-    "cramming",
-    "deep sleep",
-    "feedback",
-    "long-term memory",
-    "memory consolidation",
-    "non-rem sleep",
-    "recall",
-    "rem sleep",
-    "retrieval practice",
-    "slow-wave sleep",
-    "spaced repetition",
-    "working memory"
-  ].filter((term) => text.includes(term));
-}
-
-function isUsefulPhrase(words, stopwords, weakEdges) {
-  if (!words.length) {
-    return false;
-  }
-
-  if (words.some((word) => stopwords.has(word))) {
-    return false;
-  }
-
-  if (weakEdges.has(words[0]) || weakEdges.has(words[words.length - 1])) {
-    return false;
-  }
-
-  if (words.length === 1 && words[0].length < 5) {
-    return false;
-  }
-
-  return true;
-}
-
-function phrasesOverlap(lhs, rhs) {
-  const lhsWords = new Set(lhs.split(" "));
-  const rhsWords = rhs.split(" ");
-  return rhsWords.some((word) => lhsWords.has(word));
-}
-
-function definitionForPhrase(phrase, sentences) {
-  const matchingSentence = sentences.find((sentence) =>
-    sentence.toLowerCase().includes(phrase.toLowerCase())
-  );
-
-  return matchingSentence
-    ? shortenSentence(matchingSentence)
-    : `A recurring idea in the source: ${titleCase(phrase)}.`;
-}
-
-function makeReviewQuestions(keyTerms, sentences) {
-  const questionTemplates = [
-    (term) => `Explain ${term.term} in your own words.`,
-    (term) => `Why does ${term.term} matter for the main idea of this source?`,
-    (term) => `How would you apply ${term.term} while studying?`
-  ];
-  const questions = keyTerms.slice(0, 3).map((term, index) => ({
-    question: questionTemplates[index](term),
-    answerHint: term.definition,
-    difficulty: Math.min(index + 1, 3)
-  }));
-
-  if (sentences.length > 1) {
-    questions.push({
-      question: "What study habit or action does the source recommend?",
-      answerHint: shortenSentence(sentences[sentences.length - 1]),
-      difficulty: 2
-    });
-  }
-
-  return questions.length > 0 ? questions : [{
-    question: "What should you remember from this source?",
-    answerHint: "Use the compact summary and key terms.",
-    difficulty: 1
-  }];
-}
-
-function titleCase(value) {
-  const titled = String(value || "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-
-  return titled
-    .replace(/\bNon-rem\b/g, "Non-REM")
-    .replace(/\bRem\b/g, "REM");
-}
-
-function sourceTitleFallback(text) {
-  const words = String(text || "").split(/\s+/).filter(Boolean).slice(0, 3);
-  return words.join(" ") || "key idea";
+  return normalized;
 }
 
 function extractOutputText(payload) {
@@ -776,12 +486,26 @@ function parseModelJSON(text) {
   }
 }
 
-function nonEmptyString(value, fallback) {
-  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+function requiredString(value, path) {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  throw httpError(502, `Model response is missing ${path}.`);
 }
 
-function nonEmptyArray(value, fallback) {
-  return Array.isArray(value) && value.length > 0 ? value : fallback;
+function requiredArray(value, path) {
+  if (Array.isArray(value) && value.length > 0) {
+    return value;
+  }
+
+  throw httpError(502, `Model response is missing ${path}.`);
+}
+
+function requiredStringArray(value, path) {
+  return requiredArray(value, path).map((item, index) =>
+    requiredString(item, `${path}[${index}]`)
+  );
 }
 
 function clampInteger(value, minimum, maximum, fallback) {
