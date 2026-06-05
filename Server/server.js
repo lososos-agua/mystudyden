@@ -147,7 +147,13 @@ async function generateWithOpenRouter(course, source) {
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw httpError(response.status, payload?.error?.message || "OpenRouter request failed.");
+    logEvent("generation.source_fallback", {
+      provider: llmProvider,
+      model: activeModel,
+      sourceTitle: source.title,
+      reason: payload?.error?.message || `OpenRouter request failed with HTTP ${response.status}.`
+    });
+    return normalizeStudyPacketDraft({}, source, course);
   }
 
   const outputText = payload?.choices?.[0]?.message?.content;
@@ -474,7 +480,7 @@ function sourceBackedStudyPacketDraft(source, course) {
   const paragraphs = splitParagraphs(source.rawText);
   const keyTerms = extractKeyTerms(source.rawText, sentences);
   const conceptChunks = makeConceptChunks(paragraphs, sentences, keyTerms);
-  const compactSummary = sentences.slice(0, 2).join(" ") || `Review ${source.title} for ${course.title}.`;
+  const compactSummary = makeCompactSummary(sentences, keyTerms, source, course);
   const outline = sentences.slice(0, 4).map(shortenSentence);
 
   return {
@@ -494,7 +500,7 @@ function sourceBackedStudyPacketDraft(source, course) {
 
 function splitParagraphs(text) {
   return String(text || "")
-    .split(/\n{2,}|\r\n{2,}/)
+    .split(/\r?\n+/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
 }
@@ -512,14 +518,33 @@ function shortenSentence(sentence) {
   return words.slice(0, 18).join(" ");
 }
 
+function makeCompactSummary(sentences, keyTerms, source, course) {
+  const strongestSentences = sentences
+    .map((sentence) => ({
+      sentence,
+      score: keyTerms.reduce((score, term) => {
+        return score + (sentence.toLowerCase().includes(term.term.toLowerCase()) ? 2 : 0);
+      }, sentence.length > 80 ? 1 : 0)
+    }))
+    .sort((lhs, rhs) => rhs.score - lhs.score)
+    .slice(0, 2)
+    .map(({ sentence }) => sentence);
+
+  return strongestSentences.join(" ")
+    || sentences.slice(0, 2).join(" ")
+    || `Review ${source.title} for ${course.title}.`;
+}
+
 function makeConceptChunks(paragraphs, sentences, keyTerms) {
-  const sourceParagraphs = paragraphs.length > 0 ? paragraphs.slice(0, 3) : [sentences.join(" ")];
+  const sourceParagraphs = paragraphs.length > 1
+    ? paragraphs.slice(0, 3)
+    : sentences.slice(0, 3);
   const chunks = sourceParagraphs
     .map((paragraph, index) => {
       const paragraphSentences = splitSentences(paragraph);
       const summary = paragraphSentences[0] || paragraph;
       const keyPoints = paragraphSentences.slice(1, 4).map(shortenSentence);
-      const keywords = keyTerms.slice(index, index + 3).map((term) => term.term);
+      const keywords = keyTerms.slice(index, index + 2).map((term) => term.term);
 
       return {
         title: titleFromSentence(summary),
@@ -553,26 +578,52 @@ function extractKeyTerms(text, sentences) {
   const stopwords = new Set([
     "the", "and", "that", "this", "with", "from", "during", "there", "while", "student",
     "students", "source", "material", "learning", "study", "studying", "information",
-    "important", "process", "often", "helps", "more", "less", "later", "before"
+    "important", "process", "often", "helps", "more", "less", "later", "before", "because",
+    "than", "after", "future", "related", "learned", "plays", "role", "common", "mistake",
+    "better", "strategy", "practical", "terms"
+  ]);
+  const weakEdges = new Set([
+    "because", "strengthens", "improves", "helps", "correct", "focus", "plays", "important",
+    "related", "learned", "called", "matter", "connected", "making", "unusual", "common",
+    "mistake", "staying", "extra", "feel", "productive", "reduces", "spend", "remember",
+    "combine", "reviewing", "briefly", "works", "already", "practiced", "replace", "organize",
+    "avoid", "review", "test", "protect", "good", "part"
   ]);
   const words = normalizedText
     .replace(/[^a-z0-9 -]/g, " ")
     .split(/\s+/)
-    .filter((word) => word.length > 2 && !stopwords.has(word));
+    .filter((word) => word.length > 2);
   const scores = new Map();
 
-  for (let size = 1; size <= 3; size += 1) {
+  for (const phrase of knownStudyTerms(normalizedText)) {
+    scores.set(phrase, (scores.get(phrase) || 0) + 100);
+  }
+
+  for (let size = 1; size <= 2; size += 1) {
     for (let index = 0; index <= words.length - size; index += 1) {
-      const phrase = words.slice(index, index + size).join(" ");
-      const score = size * size;
+      const phraseWords = words.slice(index, index + size);
+      const phrase = phraseWords.join(" ");
+
+      if (!isUsefulPhrase(phraseWords, stopwords, weakEdges)) {
+        continue;
+      }
+
+      const score = size === 2 ? 6 : 2;
       scores.set(phrase, (scores.get(phrase) || 0) + score);
     }
   }
 
   const terms = [...scores.entries()]
-    .filter(([phrase]) => !phrase.split(" ").some((word) => stopwords.has(word)))
+    .filter(([phrase]) => isUsefulPhrase(phrase.split(" "), stopwords, weakEdges))
     .sort((lhs, rhs) => rhs[1] - lhs[1] || rhs[0].length - lhs[0].length)
-    .slice(0, 4)
+    .reduce((selected, [phrase, score]) => {
+      if (selected.some(([selectedPhrase]) => phrasesOverlap(selectedPhrase, phrase))) {
+        return selected;
+      }
+
+      return [...selected, [phrase, score]];
+    }, [])
+    .slice(0, 5)
     .map(([phrase]) => ({
       term: titleCase(phrase),
       definition: definitionForPhrase(phrase, sentences)
@@ -582,6 +633,50 @@ function extractKeyTerms(text, sentences) {
     term: titleCase(sourceTitleFallback(text)),
     definition: "A central idea from the source material."
   }];
+}
+
+function knownStudyTerms(text) {
+  return [
+    "active recall",
+    "cramming",
+    "deep sleep",
+    "feedback",
+    "long-term memory",
+    "memory consolidation",
+    "non-rem sleep",
+    "recall",
+    "rem sleep",
+    "retrieval practice",
+    "slow-wave sleep",
+    "spaced repetition",
+    "working memory"
+  ].filter((term) => text.includes(term));
+}
+
+function isUsefulPhrase(words, stopwords, weakEdges) {
+  if (!words.length) {
+    return false;
+  }
+
+  if (words.some((word) => stopwords.has(word))) {
+    return false;
+  }
+
+  if (weakEdges.has(words[0]) || weakEdges.has(words[words.length - 1])) {
+    return false;
+  }
+
+  if (words.length === 1 && words[0].length < 5) {
+    return false;
+  }
+
+  return true;
+}
+
+function phrasesOverlap(lhs, rhs) {
+  const lhsWords = new Set(lhs.split(" "));
+  const rhsWords = rhs.split(" ");
+  return rhsWords.some((word) => lhsWords.has(word));
 }
 
 function definitionForPhrase(phrase, sentences) {
@@ -595,8 +690,13 @@ function definitionForPhrase(phrase, sentences) {
 }
 
 function makeReviewQuestions(keyTerms, sentences) {
+  const questionTemplates = [
+    (term) => `Explain ${term.term} in your own words.`,
+    (term) => `Why does ${term.term} matter for the main idea of this source?`,
+    (term) => `How would you apply ${term.term} while studying?`
+  ];
   const questions = keyTerms.slice(0, 3).map((term, index) => ({
-    question: `How does ${term.term} connect to the source's main argument?`,
+    question: questionTemplates[index](term),
     answerHint: term.definition,
     difficulty: Math.min(index + 1, 3)
   }));
@@ -617,11 +717,15 @@ function makeReviewQuestions(keyTerms, sentences) {
 }
 
 function titleCase(value) {
-  return String(value || "")
+  const titled = String(value || "")
     .split(/\s+/)
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+
+  return titled
+    .replace(/\bNon-rem\b/g, "Non-REM")
+    .replace(/\bRem\b/g, "REM");
 }
 
 function sourceTitleFallback(text) {
