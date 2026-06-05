@@ -12,6 +12,7 @@ final class AppStore {
     private(set) var lastGenerationStatus: String?
 
     private let aiProviders: [NamedAIProvider]
+    private let persistence: AppStorePersistence?
 
     init(
         semester: Semester,
@@ -22,13 +23,15 @@ final class AppStore {
             NamedAIProvider(name: "Remote OpenRouter", provider: RemoteAIProvider()),
             NamedAIProvider(name: "Apple Foundation", provider: AppleFoundationAIProvider()),
             NamedAIProvider(name: "Mock", provider: MockAIProvider())
-        ]
+        ],
+        persistence: AppStorePersistence? = .live
     ) {
         self.semester = semester
         self.sources = sources
         self.packets = packets
         self.tasks = tasks
         self.aiProviders = aiProviders
+        self.persistence = persistence
     }
 
     var courses: [Course] {
@@ -115,6 +118,7 @@ final class AppStore {
                 packets.append(packet)
                 generationErrorMessage = nil
                 lastGenerationStatus = "Generated with \(namedProvider.name)"
+                persistCurrentState()
                 return
             } catch {
                 let message = "\(namedProvider.name): \(Self.describe(error))"
@@ -151,6 +155,25 @@ final class AppStore {
 
         return String(describing: error)
     }
+
+    private func persistCurrentState() {
+        guard let persistence else {
+            return
+        }
+
+        do {
+            try persistence.save(
+                AppStoreSnapshot(
+                    semester: semester,
+                    sources: sources,
+                    packets: packets,
+                    tasks: tasks
+                )
+            )
+        } catch {
+            lastGenerationStatus = "Save failed: \(Self.describe(error))"
+        }
+    }
 }
 
 struct NamedAIProvider {
@@ -158,8 +181,81 @@ struct NamedAIProvider {
     var provider: AIProvider
 }
 
+struct AppStoreSnapshot: Codable {
+    var semester: Semester
+    var sources: [StudySource]
+    var packets: [StudyPacket]
+    var tasks: [TaskItem]
+}
+
+struct AppStorePersistence {
+    var fileURL: URL
+
+    static var live: AppStorePersistence {
+        let directory = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        )[0]
+            .appendingPathComponent("MyStudyDen", isDirectory: true)
+
+        return AppStorePersistence(fileURL: directory.appendingPathComponent("store.json"))
+    }
+
+    func load() throws -> AppStoreSnapshot {
+        let data = try Data(contentsOf: fileURL)
+        return try JSONDecoder.myStudyDen.decode(AppStoreSnapshot.self, from: data)
+    }
+
+    func save(_ snapshot: AppStoreSnapshot) throws {
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        let data = try JSONEncoder.myStudyDen.encode(snapshot)
+        try data.write(to: fileURL, options: [.atomic])
+    }
+}
+
+private extension JSONDecoder {
+    static var myStudyDen: JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }
+}
+
+private extension JSONEncoder {
+    static var myStudyDen: JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return encoder
+    }
+}
+
 extension AppStore {
+    static func loadPersistedOrPreview() -> AppStore {
+        let persistence = AppStorePersistence.live
+
+        do {
+            let snapshot = try persistence.load()
+            return AppStore(
+                semester: snapshot.semester,
+                sources: snapshot.sources,
+                packets: snapshot.packets,
+                tasks: snapshot.tasks,
+                persistence: persistence
+            )
+        } catch {
+            return seedStore(persistence: persistence)
+        }
+    }
+
     static var preview: AppStore {
+        seedStore(persistence: nil)
+    }
+
+    private static func seedStore(persistence: AppStorePersistence?) -> AppStore {
         let course = SampleData.course
         let semester = Semester(title: "Fall 2026", courses: [course])
         return AppStore(
@@ -167,7 +263,8 @@ extension AppStore {
             tasks: [
                 TaskItem(courseID: course.id, title: "Read Week 1 article", kind: .reading),
                 TaskItem(courseID: course.id, title: "Draft reflection question", kind: .assignment)
-            ]
+            ],
+            persistence: persistence
         )
     }
 }

@@ -29,9 +29,7 @@ struct PacketDetailView: View {
                             .foregroundStyle(.secondary)
 
                         ForEach(concept.keyPoints, id: \.self) { keyPoint in
-                            Label(keyPoint, systemImage: "circle.fill")
-                                .font(.subheadline)
-                                .foregroundStyle(.primary, StudyDenTheme.apricot)
+                            BulletText(keyPoint)
                         }
                     }
                 }
@@ -61,5 +59,28 @@ struct PacketDetailView: View {
         }
         .studyDenListBackground()
         .navigationTitle(packet.title)
+    }
+}
+
+private struct BulletText: View {
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Circle()
+                .fill(StudyDenTheme.apricot)
+                .frame(width: 5, height: 5)
+                .alignmentGuide(.firstTextBaseline) { context in
+                    context[VerticalAlignment.center]
+                }
+
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+        }
     }
 }
