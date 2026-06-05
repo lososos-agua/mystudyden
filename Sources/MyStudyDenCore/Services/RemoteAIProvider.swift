@@ -25,7 +25,7 @@ public struct RemoteAIProvider: AIProvider {
     public func generateStudyPacket(from source: StudySource, course: Course) async throws -> StudyPacketDraft {
         let request = GenerateStudyPacketRequest(course: course, source: source)
         let response: GenerateStudyPacketResponse = try await post(path: "/generate-study-packet", body: request)
-        return response.draft
+        return response.draft.studyPacketDraft
     }
 
     public func generateCourseDigest(course: Course, packets: [StudyPacket]) async throws -> CourseDigestDraft {
@@ -72,12 +72,100 @@ public struct GenerateStudyPacketRequest: Codable, Sendable {
 }
 
 public struct GenerateStudyPacketResponse: Codable, Sendable {
-    public var draft: StudyPacketDraft
+    public var draft: RemoteStudyPacketDraft
     public var provider: String
 
-    public init(draft: StudyPacketDraft, provider: String) {
+    public init(draft: RemoteStudyPacketDraft, provider: String) {
         self.draft = draft
         self.provider = provider
+    }
+}
+
+public struct RemoteStudyPacketDraft: Codable, Sendable {
+    public var title: String
+    public var compactSummary: String
+    public var outline: [String]
+    public var studyGuide: String
+    public var conceptChunks: [RemoteConceptChunk]
+    public var keyTerms: [RemoteKeyTerm]
+    public var reviewQuestions: [RemoteReviewQuestion]
+
+    public init(
+        title: String,
+        compactSummary: String,
+        outline: [String],
+        studyGuide: String,
+        conceptChunks: [RemoteConceptChunk],
+        keyTerms: [RemoteKeyTerm],
+        reviewQuestions: [RemoteReviewQuestion]
+    ) {
+        self.title = title
+        self.compactSummary = compactSummary
+        self.outline = outline
+        self.studyGuide = studyGuide
+        self.conceptChunks = conceptChunks
+        self.keyTerms = keyTerms
+        self.reviewQuestions = reviewQuestions
+    }
+
+    var studyPacketDraft: StudyPacketDraft {
+        StudyPacketDraft(
+            title: title,
+            compactSummary: compactSummary,
+            outline: outline,
+            studyGuide: studyGuide,
+            conceptChunks: conceptChunks.map(\.conceptChunk),
+            keyTerms: keyTerms.map(\.keyTerm),
+            reviewQuestions: reviewQuestions.map(\.reviewQuestion)
+        )
+    }
+}
+
+public struct RemoteConceptChunk: Codable, Sendable {
+    public var title: String
+    public var summary: String
+    public var keyPoints: [String]
+    public var keywords: [String]
+
+    public init(title: String, summary: String, keyPoints: [String], keywords: [String]) {
+        self.title = title
+        self.summary = summary
+        self.keyPoints = keyPoints
+        self.keywords = keywords
+    }
+
+    var conceptChunk: ConceptChunk {
+        ConceptChunk(title: title, summary: summary, keyPoints: keyPoints, keywords: keywords)
+    }
+}
+
+public struct RemoteKeyTerm: Codable, Sendable {
+    public var term: String
+    public var definition: String
+
+    public init(term: String, definition: String) {
+        self.term = term
+        self.definition = definition
+    }
+
+    var keyTerm: KeyTerm {
+        KeyTerm(term: term, definition: definition)
+    }
+}
+
+public struct RemoteReviewQuestion: Codable, Sendable {
+    public var question: String
+    public var answerHint: String
+    public var difficulty: Int
+
+    public init(question: String, answerHint: String, difficulty: Int = 1) {
+        self.question = question
+        self.answerHint = answerHint
+        self.difficulty = difficulty
+    }
+
+    var reviewQuestion: ReviewQuestion {
+        ReviewQuestion(question: question, answerHint: answerHint, difficulty: difficulty)
     }
 }
 
