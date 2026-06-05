@@ -91,6 +91,14 @@ final class AppStore {
         generationErrorMessage = nil
     }
 
+    func deleteSource(_ source: StudySource) {
+        sources.removeAll { $0.id == source.id }
+        packets.removeAll { packet in
+            packet.sourceIDs.contains(source.id)
+        }
+        persistCurrentState()
+    }
+
     @MainActor
     func addStudySource(
         title: String,

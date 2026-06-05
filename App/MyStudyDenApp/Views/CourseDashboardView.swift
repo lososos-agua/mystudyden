@@ -46,7 +46,7 @@ struct CourseDashboardView: View {
                 } else {
                     ForEach(courseSources) { source in
                         NavigationLink {
-                            SourceDetailView(source: source)
+                            SourceDetailView(store: store, source: source)
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(source.title)
@@ -57,6 +57,13 @@ struct CourseDashboardView: View {
                                 }
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                            }
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                store.deleteSource(source)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
                         }
                     }

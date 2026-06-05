@@ -2,7 +2,10 @@ import SwiftUI
 import MyStudyDenCore
 
 struct SourceDetailView: View {
+    @Bindable var store: AppStore
     let source: StudySource
+    @Environment(\.dismiss) private var dismiss
+    @State private var isShowingDeleteConfirmation = false
 
     var body: some View {
         List {
@@ -22,6 +25,26 @@ struct SourceDetailView: View {
         }
         .studyDenListBackground()
         .navigationTitle(source.title)
+        .toolbar {
+            Button(role: .destructive) {
+                isShowingDeleteConfirmation = true
+            } label: {
+                Label("Delete Source", systemImage: "trash")
+            }
+        }
+        .confirmationDialog(
+            "Delete this source?",
+            isPresented: $isShowingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Source", role: .destructive) {
+                store.deleteSource(source)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Generated packets from this source will also be removed.")
+        }
     }
 }
 
