@@ -17,7 +17,10 @@ final class AppStore {
         sources: [StudySource] = [],
         packets: [StudyPacket] = [],
         tasks: [TaskItem] = [],
-        aiProvider: AIProvider = MockAIProvider()
+        aiProvider: AIProvider = FallbackAIProvider(
+            primary: AppleFoundationAIProvider(),
+            fallback: MockAIProvider()
+        )
     ) {
         self.semester = semester
         self.sources = sources
