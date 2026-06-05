@@ -44,6 +44,12 @@ The server listens on:
 http://127.0.0.1:8787
 ```
 
+Server activity is also written to:
+
+```text
+Server/logs/server.log
+```
+
 ## Endpoints
 
 ```text

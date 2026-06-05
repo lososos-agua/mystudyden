@@ -1,6 +1,6 @@
 import http from "node:http";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 loadDotEnv();
 
@@ -14,10 +14,11 @@ const activeModel = {
   openai: openAIModel,
   openrouter: openRouterModel
 }[llmProvider] || openRouterModel;
+const logFilePath = process.env.LOG_FILE || join(process.cwd(), "logs", "server.log");
 
 const server = http.createServer(async (request, response) => {
   try {
-    console.log(`${new Date().toISOString()} ${request.method} ${request.url}`);
+    logEvent("request", { method: request.method, url: request.url });
 
     if (request.method === "GET" && request.url === "/") {
       writeJSON(response, 200, {
@@ -43,14 +44,21 @@ const server = http.createServer(async (request, response) => {
     if (request.method === "POST" && request.url === "/generate-study-packet") {
       const body = await readJSON(request);
       const draft = await generateStudyPacket(body);
+      logEvent("generation.success", {
+        provider: llmProvider,
+        model: activeModel,
+        sourceTitle: body.source?.title,
+        packetTitle: draft.title
+      });
       writeJSON(response, 200, { draft, provider: llmProvider, model: activeModel });
       return;
     }
 
+    logEvent("route.not_found", { method: request.method, url: request.url });
     writeJSON(response, 404, { error: "Not found" });
   } catch (error) {
     const statusCode = error.statusCode || 500;
-    console.error(`${new Date().toISOString()} error ${statusCode}: ${error.message || error}`);
+    logEvent("error", { statusCode, message: error.message || String(error) });
     writeJSON(response, statusCode, {
       error: error.message || "Unexpected server error"
     });
@@ -58,8 +66,29 @@ const server = http.createServer(async (request, response) => {
 });
 
 server.listen(port, "0.0.0.0", () => {
-  console.log(`MyStudyDen server listening on http://127.0.0.1:${port}`);
+  logEvent("server.start", {
+    url: `http://127.0.0.1:${port}`,
+    provider: llmProvider,
+    model: activeModel
+  });
 });
+
+function logEvent(event, details = {}) {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    event,
+    ...details
+  };
+  const line = JSON.stringify(payload);
+  console.log(line);
+
+  try {
+    mkdirSync(dirname(logFilePath), { recursive: true });
+    appendFileSync(logFilePath, `${line}\n`, "utf8");
+  } catch (error) {
+    console.error(`Failed to write log file: ${error.message || error}`);
+  }
+}
 
 async function generateStudyPacket({ course, source }) {
   if (!course || !source) {
