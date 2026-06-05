@@ -16,6 +16,16 @@ Start with a simple subscription:
 
 The core principle is that the app should never offer unlimited AI usage without server-side quotas.
 
+During development, Gemini can be tested in a free-only mode:
+
+```text
+LLM_PROVIDER=gemini
+GEMINI_FREE_ONLY=true
+GEMINI_DAILY_REQUEST_LIMIT=50
+```
+
+This mode is for one dedicated MyStudyDen development project/API key with billing disabled. It should not be used with multiple accounts or projects to work around provider free-tier limits. If the free quota is exhausted, the app should show a clear failure instead of silently switching to a paid model or low-quality fallback.
+
 ## Revenue Assumptions
 
 For App Store subscriptions, assume Apple keeps a commission before proceeds reach the developer.

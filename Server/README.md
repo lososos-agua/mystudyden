@@ -25,11 +25,28 @@ LLM_PROVIDER=openai
 OPENAI_MODEL=gpt-5-mini
 ```
 
-To use Gemini as a low-cost production candidate:
+To test Gemini while staying inside a free development budget:
 
 ```text
 LLM_PROVIDER=gemini
 GEMINI_MODEL=gemini-2.5-flash-lite
+GEMINI_FREE_ONLY=true
+GEMINI_DAILY_REQUEST_LIMIT=50
+```
+
+Use one dedicated MyStudyDen development project/API key with billing disabled.
+Do not create extra accounts or projects to bypass free-tier quota. If Gemini returns a quota error, the server surfaces the failure instead of falling back to a paid model or mock output.
+
+When `GEMINI_FREE_ONLY=true`, the server writes a local daily request counter to:
+
+```text
+Server/logs/gemini-free-usage.json
+```
+
+To use Gemini later as a paid production candidate, keep the same provider/model settings but set:
+
+```text
+GEMINI_FREE_ONLY=false
 ```
 
 ## Run

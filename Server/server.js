@@ -1,5 +1,5 @@
 import http from "node:http";
-import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 loadDotEnv();
@@ -9,12 +9,15 @@ const llmProvider = (process.env.LLM_PROVIDER || "openrouter").toLowerCase();
 const openAIModel = process.env.OPENAI_MODEL || "gpt-5-mini";
 const openRouterModel = process.env.OPENROUTER_MODEL || "openrouter/free";
 const geminiModel = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+const geminiFreeOnly = parseBoolean(process.env.GEMINI_FREE_ONLY);
+const geminiDailyRequestLimit = Number(process.env.GEMINI_DAILY_REQUEST_LIMIT || 50);
 const activeModel = {
   gemini: geminiModel,
   openai: openAIModel,
   openrouter: openRouterModel
 }[llmProvider] || openRouterModel;
 const logFilePath = process.env.LOG_FILE || join(process.cwd(), "logs", "server.log");
+const geminiUsageFilePath = process.env.GEMINI_USAGE_FILE || join(process.cwd(), "logs", "gemini-free-usage.json");
 
 const server = http.createServer(async (request, response) => {
   try {
@@ -34,6 +37,8 @@ const server = http.createServer(async (request, response) => {
         ok: true,
         provider: llmProvider,
         model: activeModel,
+        geminiFreeOnly,
+        geminiDailyRequestLimit: geminiFreeOnly ? geminiDailyRequestLimit : null,
         hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
         hasOpenAIKey: Boolean(process.env.OPENAI_API_KEY),
         hasOpenRouterKey: Boolean(process.env.OPENROUTER_API_KEY)
@@ -163,6 +168,8 @@ async function generateWithGemini(course, source) {
   if (!process.env.GEMINI_API_KEY) {
     throw httpError(500, "GEMINI_API_KEY is missing. Create Server/.env from Server/.env.example.");
   }
+
+  recordGeminiFreeAttempt();
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`;
   const response = await fetch(url, {
@@ -510,6 +517,58 @@ function requiredStringArray(value, path) {
 
 function clampInteger(value, minimum, maximum, fallback) {
   return Number.isInteger(value) ? Math.min(Math.max(value, minimum), maximum) : fallback;
+}
+
+function recordGeminiFreeAttempt() {
+  if (!geminiFreeOnly) {
+    return;
+  }
+
+  if (!Number.isFinite(geminiDailyRequestLimit) || geminiDailyRequestLimit < 1) {
+    throw httpError(500, "GEMINI_DAILY_REQUEST_LIMIT must be a positive number when GEMINI_FREE_ONLY is enabled.");
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const usage = readGeminiUsage();
+  const nextUsage = usage.date === today
+    ? usage
+    : { date: today, requests: 0 };
+
+  if (nextUsage.requests >= geminiDailyRequestLimit) {
+    logEvent("gemini.free_quota_blocked", {
+      requestsToday: nextUsage.requests,
+      dailyLimit: geminiDailyRequestLimit
+    });
+    throw httpError(
+      429,
+      `Gemini free-only daily request limit reached (${nextUsage.requests}/${geminiDailyRequestLimit}).`
+    );
+  }
+
+  nextUsage.requests += 1;
+  nextUsage.updatedAt = new Date().toISOString();
+  writeGeminiUsage(nextUsage);
+  logEvent("gemini.free_attempt", {
+    requestsToday: nextUsage.requests,
+    dailyLimit: geminiDailyRequestLimit
+  });
+}
+
+function readGeminiUsage() {
+  try {
+    return JSON.parse(readFileSync(geminiUsageFilePath, "utf8"));
+  } catch {
+    return { date: null, requests: 0 };
+  }
+}
+
+function writeGeminiUsage(usage) {
+  mkdirSync(dirname(geminiUsageFilePath), { recursive: true });
+  writeFileSync(geminiUsageFilePath, `${JSON.stringify(usage, null, 2)}\n`, "utf8");
+}
+
+function parseBoolean(value) {
+  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
 }
 
 async function readJSON(request) {
