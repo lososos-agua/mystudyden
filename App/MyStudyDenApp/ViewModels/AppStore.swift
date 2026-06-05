@@ -18,8 +18,11 @@ final class AppStore {
         packets: [StudyPacket] = [],
         tasks: [TaskItem] = [],
         aiProvider: AIProvider = FallbackAIProvider(
-            primary: AppleFoundationAIProvider(),
-            fallback: MockAIProvider()
+            primary: RemoteAIProvider(),
+            fallback: FallbackAIProvider(
+                primary: AppleFoundationAIProvider(),
+                fallback: MockAIProvider()
+            )
         )
     ) {
         self.semester = semester
